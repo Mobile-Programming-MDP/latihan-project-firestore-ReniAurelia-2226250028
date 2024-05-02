@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "764939435209",
+    "project_id": "flutterfirebasereni",
+    "storage_bucket": "flutterfirebasereni.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:764939435209:android:78c568ed8743574e3ea118",
+        "android_client_info": {
+          "package_name": "com.example.flutterlist"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD1YzP9aOZz1mV_uz9eqSJB9cRi_2UofEA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
