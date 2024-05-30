@@ -91,7 +91,7 @@ class NoteList extends StatelessWidget {
                           children: [
                             InkWell(
                               onTap: () async {
-                                // //open url launcher
+                                //open url launcher
                                 // String url =
                                 //     "https://www.google.com/maps/search/?api=1&query=${document.lat},${document.lng}";
                                 // Uri uri = Uri.parse(url);
@@ -101,7 +101,7 @@ class NoteList extends StatelessWidget {
                                   MaterialPageRoute(
                                     builder: (context) => GoogleMapsScreen(
                                       latitude: double.parse(document.lat!),
-                                      longtitude: double.parse(document.lng!),
+                                      longitude: double.parse(document.lng!),
                                     ),
                                   ),
                                 );
