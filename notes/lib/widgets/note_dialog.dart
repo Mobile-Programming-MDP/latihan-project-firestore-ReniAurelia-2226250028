@@ -31,15 +31,41 @@ class _NoteDialogState extends State<NoteDialog> {
   }
 
   Future<void> _getLocation() async {
-    final location = await LocationService().getCurrentLocaton();
+    final location = await LocationService().getCurrentLocation();
     setState(() {
       _position = location;
     });
   }
 
   Future<void> _pickImage() async {
-    final pickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
+    final picker = ImagePicker();
+    final pickedFile = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Choose Image Source'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: Text('Camera'),
+                onTap: () async {
+                  Navigator.of(context)
+                      .pop(await picker.pickImage(source: ImageSource.camera));
+                },
+              ),
+              ListTile(
+                title: Text('Gallery'),
+                onTap: () async {
+                  Navigator.of(context)
+                      .pop(await picker.pickImage(source: ImageSource.gallery));
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
     if (pickedFile != null) {
       setState(() {
         _imageFile = pickedFile;
