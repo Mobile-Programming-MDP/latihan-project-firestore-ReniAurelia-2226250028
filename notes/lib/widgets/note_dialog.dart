@@ -1,3 +1,5 @@
+import 'dart:io' as io;
+
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
@@ -22,7 +24,6 @@ class _NoteDialogState extends State<NoteDialog> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     if (widget.note != null) {
       _titleController.text = widget.note!.title;
@@ -31,34 +32,42 @@ class _NoteDialogState extends State<NoteDialog> {
   }
 
   Future<void> _getLocation() async {
-    final location = await LocationService().getCurrentLocation();
+    final location = await LocationService().getCurrentLocaton();
     setState(() {
       _position = location;
     });
   }
 
-  Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await showDialog(
+  Future<void> _pickImage(ImageSource source) async {
+    final pickedFile = await ImagePicker().pickImage(source: source);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = pickedFile;
+      });
+    }
+  }
+
+  void _showImageSourceActionSheet(BuildContext context) {
+    showModalBottomSheet(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Choose Image Source'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
+      builder: (context) {
+        return SafeArea(
+          child: Wrap(
             children: [
               ListTile(
-                title: Text('Camera'),
-                onTap: () async {
-                  Navigator.of(context)
-                      .pop(await picker.pickImage(source: ImageSource.camera));
+                leading: Icon(Icons.photo_library),
+                title: Text('Gallery'),
+                onTap: () {
+                  _pickImage(ImageSource.gallery);
+                  Navigator.of(context).pop();
                 },
               ),
               ListTile(
-                title: Text('Gallery'),
-                onTap: () async {
-                  Navigator.of(context)
-                      .pop(await picker.pickImage(source: ImageSource.gallery));
+                leading: Icon(Icons.photo_camera),
+                title: Text('Camera'),
+                onTap: () {
+                  _pickImage(ImageSource.camera);
+                  Navigator.of(context).pop();
                 },
               ),
             ],
@@ -66,11 +75,6 @@ class _NoteDialogState extends State<NoteDialog> {
         );
       },
     );
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = pickedFile;
-      });
-    }
   }
 
   @override
@@ -100,11 +104,11 @@ class _NoteDialogState extends State<NoteDialog> {
             padding: EdgeInsets.only(
               top: 20,
             ),
-            child: Text('Image: '),
+            child: Text('Image : '),
           ),
           Expanded(
             child: _imageFile != null
-                ? Image.network(_imageFile!.path, fit: BoxFit.cover)
+                ? Image.file(io.File(_imageFile!.path), fit: BoxFit.cover)
                 : (widget.note?.imageUrl != null &&
                         Uri.parse(widget.note!.imageUrl!).isAbsolute
                     ? Image.network(
@@ -114,17 +118,17 @@ class _NoteDialogState extends State<NoteDialog> {
                     : Container()),
           ),
           TextButton(
-            onPressed: _pickImage,
-            child: const Text('Pick Image'),
+            onPressed: () => _showImageSourceActionSheet(context),
+            child: const Text('Pick Image : '),
           ),
           TextButton(
             onPressed: _getLocation,
-            child: const Text('Get Location'),
+            child: const Text('Get Location : '),
           ),
           Text(
             _position?.latitude != null && _position?.longitude != null
-                ? "Current Location : ${_position!.latitude.toString()}, ${_position!.longitude.toString()}"
-                : "Current Location : ${widget.note?.lat}, ${widget.note?.lng}",
+                ? "Current Location =: ${_position!.latitude.toString()}, ${_position!.longitude.toString()} "
+                : "Current Location =: ${widget.note?.lat}, ${widget.note?.lng}",
             textAlign: TextAlign.start,
           )
         ],
@@ -142,32 +146,45 @@ class _NoteDialogState extends State<NoteDialog> {
         ElevatedButton(
           onPressed: () async {
             String? imageUrl;
+
+            // Cek apakah ada gambar yang dipilih
             if (_imageFile != null) {
+              // Jika ada gambar dipilih, unggah gambar ke server
               imageUrl = await NoteService.uploadImage(_imageFile!);
             } else {
               imageUrl = widget.note?.imageUrl;
             }
+
+            // Ambil lokasi saat ini jika tidak ada lokasi yang tersedia sebelumnya
+            String latitude = _position?.latitude.toString() ??
+                widget.note?.lat.toString() ??
+                "";
+            String longitude = _position?.longitude.toString() ??
+                widget.note?.lng.toString() ??
+                "";
+
+            // Buat objek Note sesuai kondisi
             Note note = Note(
               id: widget.note?.id,
               title: _titleController.text,
               description: _descriptionController.text,
-              imageUrl: imageUrl,
-              lat: widget.note?.lat.toString() != _position!.latitude.toString()
-                  ? _position!.latitude.toString()
-                  : widget.note?.lat.toString(),
-              lng:
-                  widget.note?.lng.toString() != _position!.longitude.toString()
-                      ? _position!.longitude.toString()
-                      : widget.note?.lng.toString(),
+              imageUrl:
+                  imageUrl, // imageUrl bisa null jika tidak ada gambar yang dipilih
+              lat: latitude,
+              lng: longitude,
               createdAt: widget.note?.createdAt,
             );
+
+            // Jika sedang menambah catatan baru
             if (widget.note == null) {
               NoteService.addNote(note).whenComplete(() {
                 Navigator.of(context).pop();
               });
             } else {
-              NoteService.updateNote(note)
-                  .whenComplete(() => Navigator.of(context).pop());
+              // Jika sedang memperbarui catatan yang ada
+              NoteService.updateNote(note).whenComplete(() {
+                Navigator.of(context).pop();
+              });
             }
           },
           child: Text(widget.note == null ? 'Add' : 'Update'),
